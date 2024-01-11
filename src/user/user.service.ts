@@ -5,7 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import axios from 'axios';
-import { createPaymentSource, getAcceptanceToken } from 'src/utils';
+import { createPaymentSource, getAcceptanceToken } from 'src/utils/wompi';
 
 @Injectable()
 export class UserService {

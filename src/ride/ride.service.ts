@@ -7,6 +7,7 @@ import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
 import axios from 'axios';
+import { generateSignature, generateTransaction } from 'src/utils/wompi';
 
 @Injectable()
 export class RideService {
@@ -60,7 +61,7 @@ export class RideService {
 
     const distance = this.calcularDistancia(x1, y1, x2, y2);
 
-    // calculate time of ride
+    // calculate ride time
     const end_time = new Date(); // we assume that the ride ends at the moment of the request
     const time = (end_time.getTime() - ride.ride_started_at.getTime()) / 1000 / 60;
 
@@ -69,24 +70,18 @@ export class RideService {
 
     // update ride
     ride.end_location = updateRideDto.end_location;
-
     ride.ride_ended_at = end_time;
-
     ride.total_cost = cost;
-
     ride.completed = true;
 
     await this.rideRepository.save(ride);
 
     // payment
-
     try {
       const rider = await this.userService.findOne(ride.rider.user_id);
 
       if (!rider.payment_source_id) {
         throw new HttpException('User does not have a payment source', HttpStatus.BAD_REQUEST);
-
-        // todo: mark ride as not paid
       };
 
       const PAYMENT_URL = `https://sandbox.wompi.co/v1/transactions`;
@@ -95,31 +90,15 @@ export class RideService {
       const amount_in_cents = cost * 1000;
       const currency = 'COP';
       
-      const signature_seed = `${reference}${amount_in_cents}${currency}${process.env.WOMPI_INTEGRITY_SIGNATURE}`;
+      const signature = await generateSignature(reference, amount_in_cents, currency);
 
-      const encondedText = new TextEncoder().encode(signature_seed);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', encondedText);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-      const paymentResponse = await axios.post(
-        PAYMENT_URL,
-        {
-          reference,
-          amount_in_cents,
-          currency,
-          customer_email: ride.rider.email,
-          payment_method: {
-            installments: 1
-          },
-          payment_source_id: ride.rider.payment_source_id,
-          signature: signature
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${process.env.WOMPI_PRIVATE_KEY}`,
-          },
-        },
+      const paymentResponse = await generateTransaction(
+        reference,
+        amount_in_cents,
+        currency,
+        rider.email,
+        rider.payment_source_id,
+        signature
       );
 
       ride.paid = true;
