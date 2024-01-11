@@ -24,6 +24,12 @@ export class Ride {
   @Column({ type: 'timestamptz', nullable: true })
   ride_ended_at: Date;
 
-  @Column({ type: 'float', default: 3500 })
+  @Column({ type: 'integer', default: 3500 })
   total_cost: number;
+
+  @Column({ type: 'boolean', default: false })
+  completed: boolean;
+
+  @Column({ type: 'boolean', default: false })
+  paid: boolean;
 }
