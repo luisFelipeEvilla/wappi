@@ -4,6 +4,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
+import axios from 'axios';
+import { createPaymentSource, getAcceptanceToken } from 'src/utils';
 
 @Injectable()
 export class UserService {
@@ -44,7 +46,15 @@ export class UserService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    return await this.userRepository.update(id, updateUserDto);
+    if (updateUserDto.card_token) {
+      const acceptanceToken = await getAcceptanceToken();
+      const paymentSourceId = await createPaymentSource(updateUserDto.card_token, user.email, acceptanceToken);
+
+      user.payment_source_id = paymentSourceId;
+    }
+
+    return await this.userRepository.save(user);
+    // return await this.userRepository.update(id, updateUserDto);
   }
 
   async remove(id: number) {

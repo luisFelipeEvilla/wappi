@@ -13,9 +13,6 @@ export class User {
   @Column()
   is_driver: boolean;
 
-  @Column()
-  latitude: number;
-
-  @Column()
-  longitude: number;
+  @Column({ type: 'integer', nullable: true })
+  payment_source_id: number;
 }
