@@ -5,9 +5,9 @@ import { Repository } from 'typeorm';
 import { Ride } from './entities/ride.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
-import { generateSignature, generateTransaction } from 'src/utils/wompi';
 import { PaymentService } from 'src/payment/payment.service';
 import { calcRideCost } from 'src/utils/general';
+import axios from 'axios';
 
 @Injectable()
 export class RideService {
@@ -75,9 +75,9 @@ export class RideService {
       const amount_in_cents = ride.total_cost * 100;
       const currency = 'COP';
       
-      const signature = await generateSignature(reference, amount_in_cents, currency);
+      const signature = await this.generateSignature(reference, amount_in_cents, currency);
 
-      const paymentResponse = await generateTransaction(
+      const paymentResponse = await this.generateTransaction(
         reference,
         amount_in_cents,
         currency,
@@ -108,6 +108,48 @@ export class RideService {
     return `This action removes a #${id} ride`;
   }
 
- 
+  async generateSignature(reference: string, amount: number, currency: string) {
+    const signature_seed = `${reference}${amount}${currency}${process.env.WOMPI_INTEGRITY_SIGNATURE}`;
+  
+    const encondedText = new TextEncoder().encode(signature_seed);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', encondedText);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  
+    return signature;
+  }
+
+  async generateTransaction(
+    reference: string,
+    amount: number,
+    currency: string,
+    email: string,
+    paymentSourceId: number,
+    signature: string,
+  ) {
+    const PAYMENT_URL = `https://sandbox.wompi.co/v1/transactions`;
+  
+    const paymentResponse = await axios.post(
+      PAYMENT_URL,
+      {
+        reference,
+        amount_in_cents: amount,
+        currency,
+        customer_email: email,
+        payment_method: {
+          installments: 1
+        },
+        payment_source_id: paymentSourceId,
+        signature: signature
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.WOMPI_PRIVATE_KEY}`,
+        },
+      },
+    );
+  
+    return paymentResponse.data.data;
+  }
   
 }

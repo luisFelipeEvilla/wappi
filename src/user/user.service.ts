@@ -5,7 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import axios from 'axios';
-import { createPaymentSource, getAcceptanceToken } from 'src/utils/wompi';
 
 @Injectable()
 export class UserService {
@@ -47,8 +46,8 @@ export class UserService {
     }
 
     if (updateUserDto.card_token) {
-      const acceptanceToken = await getAcceptanceToken();
-      const paymentSourceId = await createPaymentSource(updateUserDto.card_token, user.email, acceptanceToken);
+      const acceptanceToken = await this.getAcceptanceToken();
+      const paymentSourceId = await this.createPaymentSource(updateUserDto.card_token, user.email, acceptanceToken);
 
       user.payment_source_id = paymentSourceId;
     }
@@ -71,5 +70,38 @@ export class UserService {
 
     return drivers[0];
 
+  }
+
+  async getAcceptanceToken() {
+    const ACCEPTANCE_TOKEN_URL = `https://sandbox.wompi.co/v1/merchants/${process.env.WOMPI_PUBLIC_KEY}`;
+  
+    const tokenResponse = await axios.get(ACCEPTANCE_TOKEN_URL);
+  
+    return tokenResponse.data.data.presigned_acceptance.acceptance_token;
+  }
+  
+  async createPaymentSource(
+    cardToken: string,
+    email: string,
+    acceptanceToken: string,
+  ) {
+    const PAYMENT_SOURCE_URL = `https://sandbox.wompi.co/v1/payment_sources`;
+  
+    const paymentSourceResponse = await axios.post(
+      PAYMENT_SOURCE_URL,
+      {
+        type: 'CARD',
+        token: cardToken,
+        customer_email: email,
+        acceptance_token: acceptanceToken,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.WOMPI_PRIVATE_KEY}`,
+        },
+      },
+    );
+  
+    return paymentSourceResponse.data.data.id;
   }
 }

@@ -10,7 +10,7 @@ export class User {
 
   // a user can be a driver, a passenger, or both
   // like in Uber, a driver can also be a passenger
-  @Column()
+  @Column({ type: 'boolean', default: false})
   is_driver: boolean;
 
   @Column({ type: 'integer', nullable: true })

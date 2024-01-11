@@ -6,5 +6,5 @@ import { Optional } from '@nestjs/common';
 export class UpdateUserDto extends PartialType(CreateUserDto) {
     @IsString()
     @IsOptional()
-    card_token: string;
+    card_token?: string;
 }
