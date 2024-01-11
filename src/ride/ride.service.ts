@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
 import { generateSignature, generateTransaction } from 'src/utils/wompi';
 import { PaymentService } from 'src/payment/payment.service';
+import { calcRideCost } from 'src/utils/general';
 
 @Injectable()
 export class RideService {
@@ -52,26 +53,10 @@ export class RideService {
   async update(id: number, updateRideDto: UpdateRideDto) {
     const ride = await this.findOne(id);
 
-    // calculate distance between start and end location
-    const x1 = ride.start_location.coordinates[0];
-    const y1 = ride.start_location.coordinates[1];
-
-    const x2 = updateRideDto.end_location.coordinates[0];
-    const y2 = updateRideDto.end_location.coordinates[1];
-
-    const distance = this.calcularDistancia(x1, y1, x2, y2);
-
-    // calculate ride time
-    const end_time = new Date(); // we assume that the ride ends at the moment of the request
-    const time = (end_time.getTime() - ride.ride_started_at.getTime()) / 1000 / 60;
-
-    // calculate cost
-    const cost = Math.floor(distance * 1000 + time * 200 + 3500);
-
     // update ride
     ride.end_location = updateRideDto.end_location;
-    ride.ride_ended_at = end_time;
-    ride.total_cost = cost;
+    ride.ride_ended_at = new Date();
+    ride.total_cost = calcRideCost(ride);
     ride.completed = true;
 
     await this.rideRepository.save(ride);
@@ -87,7 +72,7 @@ export class RideService {
       const PAYMENT_URL = `https://sandbox.wompi.co/v1/transactions`;
 
       const reference = `ride-${ride.ride_id}`;
-      const amount_in_cents = cost * 100;
+      const amount_in_cents = ride.total_cost * 100;
       const currency = 'COP';
       
       const signature = await generateSignature(reference, amount_in_cents, currency);
@@ -110,13 +95,6 @@ export class RideService {
         user: rider,
         ride: ride
       });
-
-      payment.ride = ride;
-      payment.user = rider;
-
-      ride.paid = true;
-
-      await this.rideRepository.save(ride);
     } catch (error) {
       console.error(error);
       return error;
@@ -130,26 +108,6 @@ export class RideService {
     return `This action removes a #${id} ride`;
   }
 
-  calcularDistancia(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const radioTierra = 6371000; // Radio de la Tierra en metros
-  
-    const deltaLatitud = this.toRadians(lat2 - lat1);
-    const deltaLongitud = this.toRadians(lon2 - lon1);
-  
-    const a =
-      Math.sin(deltaLatitud / 2) * Math.sin(deltaLatitud / 2) +
-      Math.cos(this.toRadians(lat1)) * Math.cos(this.toRadians(lat2)) *
-      Math.sin(deltaLongitud / 2) * Math.sin(deltaLongitud / 2);
-  
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  
-    const distancia = radioTierra * c / 1000;
-  
-    return distancia;
-  }
-  
-  toRadians(grados: number): number {
-    return grados * (Math.PI / 180);
-  }
+ 
   
 }

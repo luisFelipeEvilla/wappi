@@ -29,7 +29,4 @@ export class Ride {
 
   @Column({ type: 'boolean', default: false })
   completed: boolean;
-
-  @Column({ type: 'boolean', default: false })
-  paid: boolean;
 }
