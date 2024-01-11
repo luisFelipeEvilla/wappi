@@ -23,12 +23,12 @@ export class RideController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRideDto: UpdateRideDto) {
+  update(@Param('id') id: number, @Body() updateRideDto: UpdateRideDto) {
     return this.rideService.update(+id, updateRideDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: number) {
     return this.rideService.remove(+id);
   }
 }
