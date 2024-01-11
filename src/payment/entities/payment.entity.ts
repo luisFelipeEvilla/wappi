@@ -1,5 +1,5 @@
-import { Ride } from "src/ride/entities/ride.entity";
-import { User } from "src/user/entities/user.entity";
+import { Ride } from "../../ride/entities/ride.entity";
+import { User } from "../../user/entities/user.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()

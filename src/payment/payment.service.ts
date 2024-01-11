@@ -29,22 +29,22 @@ export class PaymentService {
   }
 
   async update(id: number, updatePaymentDto: UpdatePaymentDto) {
-    const payment = this.findOne(id);
-
-    if (!payment) {
+    const result = await this.paymentRepository.update(id, updatePaymentDto);
+  
+    if (result.affected === 0) {
       throw new HttpException('Payment not found', 404);
     }
 
-    return await this.paymentRepository.update(id, updatePaymentDto);
+    return result;
   }
 
   async remove(id: number) {
-    const payment = this.findOne(id);
-
-    if (!payment) {
+    const result = await this.paymentRepository.delete(id);
+  
+    if (result.affected === 0) {
       throw new HttpException('Payment not found', 404);
     }
 
-    return await this.paymentRepository.delete(id);
+    return result;
   }
 }
