@@ -3,17 +3,17 @@ import { CreateRideDto } from './dto/create-ride.dto';
 import { UpdateRideDto } from './dto/update-ride.dto';
 import { Repository } from 'typeorm';
 import { Ride } from './entities/ride.entity';
-import { User } from 'src/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserService } from 'src/user/user.service';
-import axios from 'axios';
 import { generateSignature, generateTransaction } from 'src/utils/wompi';
+import { PaymentService } from 'src/payment/payment.service';
 
 @Injectable()
 export class RideService {
   constructor(
     @InjectRepository (Ride) private readonly rideRepository: Repository<Ride>,
-    @Inject(UserService) private readonly userService: UserService
+    @Inject(UserService) private readonly userService: UserService,
+    @Inject(PaymentService) private readonly paymentService: PaymentService
   ) {}
 
   async create(createRideDto: CreateRideDto) {
@@ -87,7 +87,7 @@ export class RideService {
       const PAYMENT_URL = `https://sandbox.wompi.co/v1/transactions`;
 
       const reference = `ride-${ride.ride_id}`;
-      const amount_in_cents = cost * 1000;
+      const amount_in_cents = cost * 100;
       const currency = 'COP';
       
       const signature = await generateSignature(reference, amount_in_cents, currency);
@@ -100,6 +100,19 @@ export class RideService {
         rider.payment_source_id,
         signature
       );
+      
+      const payment = await this.paymentService.create({
+        amount: amount_in_cents,
+        currency: currency,
+        wompi_id: paymentResponse.id,
+        reference: reference,
+        payment_method_id: rider.payment_source_id,
+        user: rider,
+        ride: ride
+      });
+
+      payment.ride = ride;
+      payment.user = rider;
 
       ride.paid = true;
 

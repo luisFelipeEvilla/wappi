@@ -5,9 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { UserModule } from './user/user.module';
-import { UserController } from './user/user.controller';
-import { UserService } from './user/user.service';
 import { RideModule } from './ride/ride.module';
+import { PaymentModule } from './payment/payment.module';
+import { User } from './user/entities/user.entity';
+import { Payment } from './payment/entities/payment.entity';
+import { Ride } from './ride/entities/ride.entity';
 
 @Module({
   imports: [
@@ -19,12 +21,12 @@ import { RideModule } from './ride/ride.module';
       username: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'root',
       database: process.env.DB_NAME || 'test',
-      entities: [],
       synchronize: true,
       autoLoadEntities: true,
     }),
     UserModule,
-    RideModule
+    RideModule,
+    PaymentModule
   ],
   controllers: [AppController],
   providers: [AppService],
