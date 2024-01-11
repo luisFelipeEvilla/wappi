@@ -2,7 +2,7 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Point, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 
 @Injectable()
@@ -49,5 +49,17 @@ export class UserService {
 
   async remove(id: number) {
     return await this.userRepository.delete(id);
+  }
+
+  async findDriver(location: Point) {
+    // todo: return closest driver
+    const drivers = await this.userRepository.find({
+      where: {
+        is_driver: true
+      }
+    });
+
+    return drivers[0];
+
   }
 }

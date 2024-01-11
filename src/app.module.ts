@@ -7,6 +7,7 @@ import { DataSource } from 'typeorm';
 import { UserModule } from './user/user.module';
 import { UserController } from './user/user.controller';
 import { UserService } from './user/user.service';
+import { RideModule } from './ride/ride.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { UserService } from './user/user.service';
       autoLoadEntities: true,
     }),
     UserModule,
+    RideModule
   ],
   controllers: [AppController],
   providers: [AppService],
