@@ -18,7 +18,7 @@ export class RideController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: number) {
     return this.rideService.findOne(+id);
   }
 
