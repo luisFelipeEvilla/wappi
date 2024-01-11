@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Point, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import axios from 'axios';
+import { createPaymentMethodDto } from './dto/create-payment-method';
 
 @Injectable()
 export class UserService {
@@ -35,25 +36,13 @@ export class UserService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const user = await this.userRepository.findOne({
-      where: {
-        user_id: id
-      }
-    });
-
-    if (!user) {
+    const result = await this.userRepository.update(id, updateUserDto);
+  
+    if (result.affected === 0) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
-    if (updateUserDto.card_token) {
-      const acceptanceToken = await this.getAcceptanceToken();
-      const paymentSourceId = await this.createPaymentSource(updateUserDto.card_token, user.email, acceptanceToken);
-
-      user.payment_source_id = paymentSourceId;
-    }
-
-    return await this.userRepository.save(user);
-    // return await this.userRepository.update(id, updateUserDto);
+    return result;
   }
 
   async remove(id: number) {
@@ -70,6 +59,17 @@ export class UserService {
 
     return drivers[0];
 
+  }
+
+  async createPaymentMethod(id: number, createPaymentMethodDto: createPaymentMethodDto) {
+    const user = await this.findOne(id);
+
+    const acceptanceToken = await this.getAcceptanceToken();
+    const paymentSourceId = await this.createPaymentSource(createPaymentMethodDto.card_token, user.email, acceptanceToken);
+
+    user.payment_source_id = paymentSourceId;
+
+    return await this.userRepository.save(user);
   }
 
   async getAcceptanceToken() {

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { createPaymentMethodDto } from './dto/create-payment-method';
 
 @Controller('user')
 export class UserController {
@@ -13,6 +14,15 @@ export class UserController {
   create(@Body() createUserDto: CreateUserDto) {
     try {
       return this.userService.create(createUserDto);
+    } catch (error) {
+      return error;
+    }
+  }
+
+  @Post(':id/paymentMethod') 
+  createPaymentMethod(@Param('id') id: number, @Body() createPaymentMethodDto: createPaymentMethodDto) {
+    try {
+      return this.userService.createPaymentMethod(id, createPaymentMethodDto);
     } catch (error) {
       return error;
     }
