@@ -4,9 +4,9 @@ import { UpdateRideDto } from './dto/update-ride.dto';
 import { Repository } from 'typeorm';
 import { Ride } from './entities/ride.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserService } from 'src/user/user.service';
-import { PaymentService } from 'src/payment/payment.service';
-import { calcRideCost } from 'src/utils/general';
+import { UserService } from '../user/user.service';
+import { PaymentService } from '..//payment/payment.service';
+import { calcRideCost } from '../utils/general';
 import axios from 'axios';
 
 @Injectable()
@@ -104,8 +104,10 @@ export class RideService {
     return ride;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ride`;
+  async remove(id: number) {
+    const result = await this.rideRepository.delete(id);
+
+    return result;
   }
 
   async generateSignature(reference: string, amount: number, currency: string) {
